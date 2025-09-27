@@ -1,0 +1,29 @@
+{
+  "name": "@piano-man/backend",
+  "version": "1.0.0",
+  "description": "This project was bootstrapped with Fastify-CLI.",
+  "main": "app.ts",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "tsx --test test/**/*.test.ts",
+    "start": "tsx node_modules/fastify-cli/start.js -l info app.ts",
+    "dev": "tsx node_modules/fastify-cli/start.js -w -l info -P app.ts"
+  },
+  "keywords": [],
+  "author": "TheoryOfNekomata",
+  "license": "ISC",
+  "dependencies": {
+    "@fastify/autoload": "^6.0.0",
+    "@fastify/sensible": "^6.0.0",
+    "fastify": "^5.0.0",
+    "fastify-cli": "^7.4.0",
+    "fastify-plugin": "^5.0.0",
+    "tsx": "^4.20.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "^5.9.2"
+  }
+}
