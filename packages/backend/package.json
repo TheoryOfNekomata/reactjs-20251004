@@ -1,5 +1,5 @@
 {
-  "name": "backend",
+  "name": "@piano-man/backend",
   "version": "1.0.0",
   "description": "This project was bootstrapped with Fastify-CLI.",
   "main": "app.ts",
@@ -8,27 +8,30 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "tsc -p test/tsconfig.json && c8 tsx --test \"test/**/*.ts\"",
-    "start": "tsx node_modules/fastify-cli/start.js -l info dist/app.js",
-    "dev": "tsx node_modules/fastify-cli/start.js -w -l info -P src/app.ts"
+    "test": "vitest",
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts"
   },
   "keywords": [],
   "author": "TheoryOfNekomata",
   "license": "ISC",
   "dependencies": {
     "@fastify/autoload": "^6.0.0",
-    "@fastify/sensible": "^6.0.0",
+    "@fastify/multipart": "^9.2.1",
+    "better-sqlite3": "^12.4.1",
     "fastify": "^5.0.0",
     "fastify-cli": "^7.4.0",
     "fastify-plugin": "^5.0.0",
     "tsx": "^4.20.6"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.1.0",
     "c8": "^10.1.2",
     "concurrently": "^9.0.0",
     "fastify-tsconfig": "^3.0.0",
     "ts-node": "^10.4.0",
-    "typescript": "~5.8.2"
+    "typescript": "~5.8.2",
+    "vitest": "^3.2.4"
   }
 }
