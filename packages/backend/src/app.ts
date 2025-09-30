@@ -1,8 +1,9 @@
 import {fastify} from 'fastify';
 import { readFileSync, existsSync, mkdirSync } from 'node:fs';
-import fastifyMultipart from '@fastify/multipart';
+import {fastifyMultipart} from '@fastify/multipart';
 import {join} from 'node:path';
 import {Database} from 'better-sqlite3';
+import {fastifyCors} from '@fastify/cors';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -39,12 +40,16 @@ export const createApp = (opts = {} as CreateAppOptions) => {
   }
   app.decorate('uploadsDir', uploadsDir);
 
+  // app.register(fastifyCors, {
+    // origin: ['http://localhost:5173'],
+  // });
+
   // Register multipart plugin
   app.register(fastifyMultipart, {
     limits: {
       fieldNameSize: 100, // Max field name size in bytes
       fieldSize: 100, // Max field value size in bytes
-      fields: 10, // Max number of non-file fields
+      fields: 0, // Max number of non-file fields
       fileSize: 5 * 1024 * 1024, // 5MB limit for file uploads
       files: 1, // Max number of file fields
     }

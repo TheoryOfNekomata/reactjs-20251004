@@ -1,6 +1,6 @@
 import {randomUUID} from 'node:crypto';
 import {Database} from 'better-sqlite3';
-import { Piano, PianoImage } from '../../models';
+import {Piano, PianoImage} from '../../models';
 import {prepareQuery} from '../../sql';
 import {service as uploadService} from '../upload';
 
@@ -55,9 +55,15 @@ export const queryPianos = (db: Database) => (pianoQuery: PianoQuery) => {
 	const countStmt = prepareQuery<[typeof query, typeof itemsPerPage, typeof offset], { count: number }>(db, 'src/modules/piano/queries/query-piano-count.sql');
 	const { count = 0 } = countStmt.get(query, itemsPerPage, offset) ?? {};
 
+	const imagesStmt = prepareQuery<[typeof query, typeof itemsPerPage, typeof offset], PianoImage>(db, 'src/modules/piano/queries/query-piano-images.sql')
+	const images = imagesStmt.all(query, itemsPerPage, offset);
+
 	const queryStmt = prepareQuery<[typeof query, typeof itemsPerPage, typeof offset], Piano>(db, 'src/modules/piano/queries/query-piano.sql');
 	return {
-		data: queryStmt.all(query, itemsPerPage, offset),
+		data: queryStmt.all(query, itemsPerPage, offset).map((d) => ({
+			...d,
+			image: images.find((im) => im.piano_id === d.id) ?? null,
+		})),
 		count,
 	};
 };
@@ -99,8 +105,7 @@ export const createPianoImage = (db: Database) => (pianoId: PianoImage['piano_id
 		uploadId,
 	);
 
-	const pianoImage = getPianoImageById(db)(id);
-	return pianoImage;
+	return getPianoImageById(db)(id);
 };
 
 // Delete a piano image
