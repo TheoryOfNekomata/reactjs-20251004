@@ -1,23 +1,20 @@
-import { readFileSync } from 'node:fs';
-import {Database} from 'better-sqlite3';
 import {randomUUID} from 'node:crypto';
+import {Database} from 'better-sqlite3';
 import { Piano, PianoImage } from '../../models';
-import {getUploadById} from '../upload/service';
+import {prepareQuery} from '../../sql';
+import {service as uploadService} from '../upload';
 
 export const getPianoById = (db: Database) => (id: Piano['id']) => {
-	const getByIdQuery = readFileSync('src/modules/piano/queries/get-piano-by-id.sql', { encoding: 'utf-8' });
-	const queryStmt = db.prepare<[Piano['id']], Piano>(getByIdQuery);
+	const queryStmt = prepareQuery<[Piano['id']], Piano>(db, 'src/modules/piano/queries/get-piano-by-id.sql');
 	return queryStmt.get(id);
 };
 
 export interface CreatePiano extends Omit<Piano, 'id' | 'created_at'> {}
 
 export const createNewPiano = (db: Database) => (pianoData: CreatePiano): Piano | undefined => {
-	const createQuery = readFileSync('src/modules/piano/queries/create-new-piano.sql', { encoding: 'utf-8' });
 	const id = randomUUID();
-	const createStmt = db.prepare<[Piano['id'], Piano['model']]>(createQuery);
+	const createStmt = prepareQuery<[Piano['id'], Piano['model']]>(db, 'src/modules/piano/queries/create-new-piano.sql');
 	createStmt.run(id, pianoData.model);
-
 	return getPianoById(db)(id);
 };
 
@@ -26,11 +23,10 @@ export const deletePiano = (db: Database) => (id: Piano['id']) => {
 	if (!existingPiano) {
 		return false;
 	}
-	const queries = readFileSync('src/modules/piano/queries/delete-piano-by-id.sql', { encoding: 'utf-8' }).split(';');
-	const [deleteImagesQuery, deleteQuery] = queries.map(q => q + ';');
-	const deleteImagesStmt = db.prepare<[Piano['id']]>(deleteImagesQuery);
+
+	const deleteImagesStmt = prepareQuery<[Piano['id']]>(db, 'src/modules/piano/queries/delete-piano-images-by-piano-id.sql');
 	deleteImagesStmt.run(id);
-	const deleteStmt = db.prepare<[Piano['id']]>(deleteQuery);
+	const deleteStmt = prepareQuery<[Piano['id']]>(db, 'src/modules/piano/queries/delete-piano-by-id.sql');
 	deleteStmt.run(id);
 	return true;
 };
@@ -38,8 +34,7 @@ export const deletePiano = (db: Database) => (id: Piano['id']) => {
 export interface UpdatePianoModelPiano extends Omit<Piano, 'id' | 'created_at'> {}
 
 export const updatePianoModel = (db: Database) => (id: Piano['id']) => (pianoData: UpdatePianoModelPiano) => {
-	const updateQuery = readFileSync('src/modules/piano/queries/update-piano-model.sql', { encoding: 'utf-8' });
-	const updateStmt = db.prepare<[Piano['model'], Piano['id']]>(updateQuery);
+	const updateStmt = prepareQuery<[Piano['model'], Piano['id']]>(db, 'src/modules/piano/queries/update-piano-model.sql');
 	updateStmt.run(pianoData.model, id);
 
 	return getPianoById(db)(id);
@@ -57,12 +52,10 @@ export const queryPianos = (db: Database) => (pianoQuery: PianoQuery) => {
 	const itemsPerPage = typeof pianoQuery.itemsPerPage === 'number' && Number.isFinite(pianoQuery.itemsPerPage) ? pianoQuery.itemsPerPage : 10;
 	const offset = (page - 1) * itemsPerPage;
 
-	const countQuery = readFileSync('src/modules/piano/queries/query-piano-count.sql', { encoding: 'utf-8' });
-	const countStmt = db.prepare<[typeof query, typeof itemsPerPage, typeof offset], { count: number }>(countQuery);
+	const countStmt = prepareQuery<[typeof query, typeof itemsPerPage, typeof offset], { count: number }>(db, 'src/modules/piano/queries/query-piano-count.sql');
 	const { count = 0 } = countStmt.get(query, itemsPerPage, offset) ?? {};
 
-	const queryQuery = readFileSync('src/modules/piano/queries/query-piano.sql', { encoding: 'utf-8' });
-	const queryStmt = db.prepare<[typeof query, typeof itemsPerPage, typeof offset], Piano>(queryQuery);
+	const queryStmt = prepareQuery<[typeof query, typeof itemsPerPage, typeof offset], Piano>(db, 'src/modules/piano/queries/query-piano.sql');
 	return {
 		data: queryStmt.all(query, itemsPerPage, offset),
 		count,
@@ -71,15 +64,13 @@ export const queryPianos = (db: Database) => (pianoQuery: PianoQuery) => {
 
 // Get piano image by ID
 const getPianoImageById = (db: Database) => (id: PianoImage['id']) => {
-	const query = readFileSync('src/modules/piano/queries/get-piano-image-by-id.sql', { encoding: 'utf-8' });
-	const stmt = db.prepare<[PianoImage['id']], PianoImage>(query);
+	const stmt = prepareQuery<[PianoImage['id']], PianoImage>(db, 'src/modules/piano/queries/get-piano-image-by-id.sql');
 	return stmt.get(id);
 };
 
 // Get all images for a piano
 export const getPianoImages = (db: Database) => (pianoId: Piano['id']) => {
-	const query = readFileSync('src/modules/piano/queries/get-piano-images.sql', { encoding: 'utf-8' });
-	const stmt = db.prepare<[Piano['id']], PianoImage & { piano_image_id: PianoImage['id'] }>(query);
+	const stmt = prepareQuery<[Piano['id']], PianoImage & { piano_image_id: PianoImage['id'] }>(db, 'src/modules/piano/queries/get-piano-images.sql');
 	return stmt.all(pianoId).map(({ id: _, piano_image_id, ...etcPianoImage }) => ({
 		...etcPianoImage,
 		id: piano_image_id,
@@ -94,15 +85,14 @@ export const createPianoImage = (db: Database) => (pianoId: PianoImage['piano_id
 		return undefined;
 	}
 
-	const upload = getUploadById(db)(uploadId);
+	const upload = uploadService.getUploadById(db)(uploadId);
 	if (!upload) {
 		return undefined;
 	}
 
 	// Generate a unique ID and filename
 	const id = randomUUID();
-	const query = readFileSync('src/modules/piano/queries/create-piano-image.sql', { encoding: 'utf-8' });
-	const stmt = db.prepare<[PianoImage['id'], PianoImage['piano_id'], PianoImage['image_upload_id']]>(query);
+	const stmt = prepareQuery<[PianoImage['id'], PianoImage['piano_id'], PianoImage['image_upload_id']]>(db, 'src/modules/piano/queries/create-piano-image.sql');
 	stmt.run(
 		id,
 		pianoId,
@@ -124,8 +114,7 @@ export const deletePianoImage = (db: Database) => (imageId: PianoImage['id']) =>
 	try {
 
 		// Delete from database
-		const query = readFileSync('src/modules/piano/queries/delete-piano-image-by-id.sql', { encoding: 'utf-8' });
-		const stmt = db.prepare<[PianoImage['id']]>(query);
+		const stmt = prepareQuery<[PianoImage['id']]>(db, 'src/modules/piano/queries/delete-piano-image-by-id.sql');
 		stmt.run(imageId);
 
 		return true;

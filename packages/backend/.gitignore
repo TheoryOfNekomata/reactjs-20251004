@@ -65,3 +65,5 @@ test/types/index.js
 dist
 *.sqlite
 uploads/
+.env*
+!.env.example

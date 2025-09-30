@@ -1,21 +1,23 @@
 import {fastify} from 'fastify';
-import * as pianoModule from './modules/piano';
-import * as uploadModule from './modules/upload';
-import Database from 'better-sqlite3';
 import { readFileSync, existsSync, mkdirSync } from 'node:fs';
 import fastifyMultipart from '@fastify/multipart';
 import {join} from 'node:path';
+import {Database} from 'better-sqlite3';
 
-interface AppOptions {
-  databaseFilename?: string;
+declare module 'fastify' {
+  interface FastifyInstance {
+    db: Database;
+    uploadsDir: string;
+  }
 }
 
-export const app = (opts = {
-  databaseFilename: ':memory:',
-} as AppOptions) => {
-  const db = new Database(opts.databaseFilename);
-  const schema = readFileSync('src/schema.sql', { encoding: 'utf-8' });
-  db.exec(schema);
+interface CreateAppOptions {
+  database?: Database;
+  uploadsDir?: string;
+}
+
+export const createApp = (opts = {} as CreateAppOptions) => {
+  const { database, uploadsDir = '/uploads' } = opts;
 
   const packageJson = readFileSync('package.json', { encoding: 'utf-8' });
   const packageJsonData = JSON.parse(packageJson);
@@ -25,16 +27,20 @@ export const app = (opts = {
   };
 
   // Ensure uploads directory exists
-  const uploadsDir = '/uploads';
+
+  const app = fastify();
+  if (database) {
+    app.decorate('db', database);
+  }
+
   const trueUploadsDir = join(process.cwd(), uploadsDir);
   if (!existsSync(trueUploadsDir)) {
     mkdirSync(trueUploadsDir, { recursive: true });
   }
-
-  const f = fastify();
+  app.decorate('uploadsDir', uploadsDir);
 
   // Register multipart plugin
-  f.register(fastifyMultipart, {
+  app.register(fastifyMultipart, {
     limits: {
       fieldNameSize: 100, // Max field name size in bytes
       fieldSize: 100, // Max field value size in bytes
@@ -44,10 +50,7 @@ export const app = (opts = {
     }
   });
 
-  pianoModule.routes.addRoutes(db)(f);
-  uploadModule.routes.addRoutes(db, uploadsDir)(f);
-
-  f.route({
+  app.route({
     method: 'GET',
     url: '/api',
     handler: async (request, reply) => {
@@ -55,5 +58,5 @@ export const app = (opts = {
     },
   })
 
-  return f;
+  return app;
 };

@@ -4,12 +4,12 @@ import {MultipartFile} from '@fastify/multipart';
 import {randomUUID} from 'node:crypto';
 import { join } from 'node:path';
 import {pipeline} from 'node:stream/promises';
-import {createWriteStream, existsSync, readFileSync, unlinkSync} from 'node:fs';
+import {createWriteStream, existsSync, unlinkSync} from 'node:fs';
 import {Upload} from '../../models';
+import {prepareQuery} from '../../sql';
 
 export const getUploadById = (db: Database) => (id: Upload['id']) => {
-	const query = readFileSync('src/modules/upload/queries/get-upload-by-id.sql', { encoding: 'utf-8' });
-	const stmt = db.prepare<[Upload['id']], Upload>(query);
+	const stmt = prepareQuery<[Upload['id']], Upload>(db, 'src/modules/upload/queries/get-upload-by-id.sql');
 	return stmt.get(id);
 };
 
@@ -34,8 +34,7 @@ export const createUpload = (db: Database, basePath: string) => async (file: Mul
 		await pipeline(file.file, createWriteStream(savePath));
 
 		// Save metadata to database
-		const query = readFileSync('src/modules/upload/queries/create-upload.sql', { encoding: 'utf-8' });
-		const stmt = db.prepare<[Upload['id'], Upload['original_filename'], Upload['mimetype']]>(query);
+		const stmt = prepareQuery<[Upload['id'], Upload['original_filename'], Upload['mimetype']]>(db, 'src/modules/upload/queries/create-upload.sql');
 		stmt.run(
 			id,
 			file.filename,
@@ -65,8 +64,7 @@ export const deleteUpload = (db: Database, basePath: string) => (id: Upload['id'
 		}
 
 		// Delete from database
-		const query = readFileSync('src/modules/upload/queries/delete-upload.sql', { encoding: 'utf-8' });
-		const stmt = db.prepare<[Upload['id']]>(query);
+		const stmt = prepareQuery<[Upload['id']]>(db, 'src/modules/upload/queries/delete-upload.sql');
 		stmt.run(id);
 
 		return true;

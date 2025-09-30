@@ -1,16 +1,8 @@
 import {FastifyInstance} from 'fastify';
-import {
-	queryPianos,
-	CreatePiano,
-	createNewPiano,
-	deletePiano,
-	UpdatePianoModelPiano,
-	updatePianoModel, getPianoById, getPianoImages, deletePianoImage, createPianoImage,
-} from './service';
-import {Database} from 'better-sqlite3';
 import {Piano, PianoImage, Upload} from '../../models';
+import * as service from './service';
 
-export const addRoutes = (db: Database) => (fastify: FastifyInstance) => {
+export const addToApp = (fastify: FastifyInstance) => {
 	return fastify
 		.route<{
 			Querystring: {
@@ -23,7 +15,7 @@ export const addRoutes = (db: Database) => (fastify: FastifyInstance) => {
 			url: '/api/pianos',
 			handler: async (request, reply) => {
 				const { c: itemsPerPage = 10, p: page = 1, q: query = '' } = request.query;
-				const { data, count } = queryPianos(db)({
+				const { data, count } = service.queryPianos(request.server.db)({
 					itemsPerPage: Number(itemsPerPage),
 					page: Number(page),
 					query,
@@ -39,12 +31,12 @@ export const addRoutes = (db: Database) => (fastify: FastifyInstance) => {
 			method: 'GET',
 			url: '/api/pianos/:pianoId',
 			handler: async (request, reply) => {
-				const piano = getPianoById(db)(request.params.pianoId);
+				const piano = service.getPianoById(request.server.db)(request.params.pianoId);
 				if (!piano) {
 					reply.status(404).send();
 					return;
 				}
-				const images = getPianoImages(db)(request.params.pianoId);
+				const images = service.getPianoImages(request.server.db)(request.params.pianoId);
 				reply.send({
 					...piano,
 					images,
@@ -52,7 +44,7 @@ export const addRoutes = (db: Database) => (fastify: FastifyInstance) => {
 			},
 		})
 		.route<{
-			Body: CreatePiano & {
+			Body: service.CreatePiano & {
 				images?: {
 					upload_id: Upload['id'];
 				}[]
@@ -62,14 +54,14 @@ export const addRoutes = (db: Database) => (fastify: FastifyInstance) => {
 			url: '/api/pianos',
 			handler: async (request, reply) => {
 				const { images = [], ...pianoData } = request.body;
-				const newPiano = createNewPiano(db)(pianoData);
+				const newPiano = service.createNewPiano(request.server.db)(pianoData);
 				if (!newPiano) {
 					reply.status(500).send();
 					return;
 				}
 				const successfulImages = [];
 				for (const image of images) {
-					const pianoImage = createPianoImage(db)(newPiano.id, image.upload_id);
+					const pianoImage = service.createPianoImage(request.server.db)(newPiano.id, image.upload_id);
 					if (!pianoImage) {
 						reply.status(500).send();
 						return;
@@ -91,7 +83,7 @@ export const addRoutes = (db: Database) => (fastify: FastifyInstance) => {
 			url: '/api/pianos/:pianoId',
 			handler: async (request, reply) => {
 				try {
-					const result = deletePiano(db)(request.params.pianoId);
+					const result = service.deletePiano(request.server.db)(request.params.pianoId);
 					if (!result) {
 						reply.status(404).send();
 						return;
@@ -106,12 +98,13 @@ export const addRoutes = (db: Database) => (fastify: FastifyInstance) => {
 			Params: {
 				pianoId: Piano['id'],
 			},
-			Body: UpdatePianoModelPiano
+			Body: service.UpdatePianoModelPiano
 		}>({
 			method: 'PATCH',
 			url: '/api/pianos/:pianoId',
 			handler: async (request, reply) => {
-				const updatedPiano = updatePianoModel(db)(request.params.pianoId)(request.body);
+				const updatedPiano = service.updatePianoModel(request.server.db)(request.params.pianoId)(request.body);
+
 				if (!updatedPiano) {
 					reply.status(500).send();
 					return;
@@ -130,7 +123,7 @@ export const addRoutes = (db: Database) => (fastify: FastifyInstance) => {
 			method: 'POST',
 			url: '/api/pianos/:pianoId/images',
 			handler: async (request, reply) => {
-				const pianoImage = createPianoImage(db)(request.params.pianoId, request.body.upload_id);
+				const pianoImage = service.createPianoImage(request.server.db)(request.params.pianoId, request.body.upload_id);
 				if (!pianoImage) {
 					reply.status(500).send();
 					return;
@@ -149,7 +142,7 @@ export const addRoutes = (db: Database) => (fastify: FastifyInstance) => {
 			url: '/api/pianos/:pianoId/images/:imageId',
 			handler: async (request, reply) => {
 				try {
-					const result = deletePianoImage(db)(request.params.imageId);
+					const result = service.deletePianoImage(request.server.db)(request.params.imageId);
 					if (!result) {
 						reply.status(404).send();
 						return;

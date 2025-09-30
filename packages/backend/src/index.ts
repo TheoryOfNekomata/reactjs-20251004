@@ -1,8 +1,26 @@
-import { app } from './app';
+import { config } from 'dotenv';
+import SqliteDatabase from 'better-sqlite3';
+import * as pianoModule from './modules/piano';
+import * as uploadModule from './modules/upload';
+import { createApp } from './app';
+import {runQuery} from './sql';
 
-app({
-	databaseFilename: process.env.NODE_ENV !== 'test' ? 'pianos.sqlite' : ':memory:',
-}).listen({
-	port: 3000,
-	host: '0.0.0.0',
+config({ quiet: true });
+
+const db = new SqliteDatabase(process.env.DATABASE_FILENAME ?? ':memory:');
+const app = createApp({
+	database: db,
+	uploadsDir: process.env.UPLOADS_DIR,
+});
+
+runQuery(db, 'src/schema.sql');
+
+pianoModule.routes.addToApp(app);
+uploadModule.routes.addToApp(app);
+
+app.listen({
+	port: Number(process.env.PORT ?? 3000),
+	host: process.env.HOSTNAME ?? '0.0.0.0',
+}).then((address) => {
+	console.log(`Server running at ${address}`);
 });

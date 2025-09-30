@@ -1,26 +1,31 @@
-import {Database} from 'better-sqlite3';
-import {FastifyInstance} from 'fastify';
-import {createUpload, deleteUpload, getUploadById} from './service';
-import {Upload} from '../../models';
 import {join} from 'node:path';
 import {createReadStream} from 'node:fs';
+import {FastifyInstance} from 'fastify';
+import {Upload} from '../../models';
+import {createUpload, deleteUpload, getUploadById} from './service';
+import {MultipartFile} from '@fastify/multipart';
 
-export const addRoutes = (db: Database, basePath: string) => (fastify: FastifyInstance) => {
-	const trueBasePath = join(process.cwd(), basePath)
+export const addToApp = (fastify: FastifyInstance) => {
+	const trueBasePath = join(process.cwd(), fastify.uploadsDir)
 	return fastify
 		.route({
 			method: 'POST',
 			url: '/api/uploads',
 			handler: async (request, reply) => {
-				const file = await request.file();
+				let file: MultipartFile | undefined;
+				try {
+					file = await request.file();
+				} catch {
+					reply.status(400).send();
+					return;
+				}
 
 				if (!file) {
 					reply.status(400).send();
 					return;
 				}
 
-				const result = await createUpload(db, trueBasePath)(file);
-
+				const result = await createUpload(request.server.db, trueBasePath)(file);
 				if (!result) {
 					reply.status(400).send();
 					return;
@@ -40,7 +45,7 @@ export const addRoutes = (db: Database, basePath: string) => (fastify: FastifyIn
 			method: 'GET',
 			url: '/api/uploads/:uploadId',
 			handler: async (request, reply) => {
-				const upload = getUploadById(db)(request.params.uploadId);
+				const upload = getUploadById(request.server.db)(request.params.uploadId);
 				if (!upload) {
 					reply.status(404).send();
 					return;
@@ -58,7 +63,7 @@ export const addRoutes = (db: Database, basePath: string) => (fastify: FastifyIn
 			url: '/api/uploads/:uploadId',
 			handler: async (request, reply) => {
 				try {
-					const result = deleteUpload(db, trueBasePath)(request.params.uploadId);
+					const result = deleteUpload(request.server.db, trueBasePath)(request.params.uploadId);
 					if (!result) {
 						reply.status(404).send();
 						return;
@@ -78,7 +83,7 @@ export const addRoutes = (db: Database, basePath: string) => (fastify: FastifyIn
 			method: 'GET',
 			url: '/api/uploads/:uploadId/binary',
 			handler: async (request, reply) => {
-				const upload = getUploadById(db)(request.params.uploadId);
+				const upload = getUploadById(request.server.db)(request.params.uploadId);
 				if (!upload) {
 					reply.status(404).send();
 					return;
