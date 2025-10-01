@@ -23,7 +23,7 @@ export default function PianoPage() {
 						<header className="relative min-h-28">
 							<div className="absolute bottom-0 left-0 w-full bg-black/75 text-white">
 								<div className="max-w-5xl mx-auto px-4 flex flex-col justify-center gap-2 h-28">
-									<h1 className="text-5xl font-bold">
+									<h1 className="text-2xl flex items-end lg:text-5xl font-bold line-clamp-2 h-[3em]">
 										{pianoData.model}
 									</h1>
 									<time dateTime={new Date(pianoData.created_at * 1000).toISOString()} className="font-bold">
