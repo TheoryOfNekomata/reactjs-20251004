@@ -14,7 +14,7 @@
   },
   "keywords": [],
   "author": "TheoryOfNekomata",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@fastify/autoload": "^6.0.0",
     "@fastify/cors": "^11.1.0",

@@ -55,8 +55,8 @@ export const queryPianos = (db: Database) => (pianoQuery: PianoQuery) => {
 	const countStmt = prepareQuery<[typeof query, typeof itemsPerPage, typeof offset], { count: number }>(db, 'src/modules/piano/queries/query-piano-count.sql');
 	const { count = 0 } = countStmt.get(query, itemsPerPage, offset) ?? {};
 
-	const imagesStmt = prepareQuery<[typeof query, typeof itemsPerPage, typeof offset], PianoImage>(db, 'src/modules/piano/queries/query-piano-images.sql')
-	const images = imagesStmt.all(query, itemsPerPage, offset);
+	const imagesStmt = prepareQuery<[typeof query], PianoImage>(db, 'src/modules/piano/queries/query-piano-images.sql')
+	const images = imagesStmt.all(query);
 
 	const queryStmt = prepareQuery<[typeof query, typeof itemsPerPage, typeof offset], Piano>(db, 'src/modules/piano/queries/query-piano.sql');
 	return {

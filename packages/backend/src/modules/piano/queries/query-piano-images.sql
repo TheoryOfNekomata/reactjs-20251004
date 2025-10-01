@@ -1,7 +1,5 @@
-SELECT DISTINCT piano_images.*, uploads.*
-FROM piano_images
-			 JOIN pianos ON piano_images.piano_id = pianos.id
-			 JOIN (SELECT * FROM uploads ORDER BY created_at DESC) AS uploads ON piano_images.image_upload_id = uploads.id
-WHERE model LIKE ?
-GROUP BY piano_id
-LIMIT ? OFFSET ?;
+SELECT piano_images.*, uploads.*
+FROM pianos
+			 LEFT JOIN piano_images on pianos.id = piano_images.piano_id
+			 JOIN (SELECT * FROM uploads ORDER BY created_at DESC) AS uploads on uploads.id = piano_images.image_upload_id
+WHERE model LIKE ?;

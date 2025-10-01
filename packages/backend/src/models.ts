@@ -1,7 +1,7 @@
 export interface Piano {
 	id: string;
 	model: string;
-	created_at: Date;
+	created_at: number; // Date
 }
 
 export interface PianoImage {
@@ -14,5 +14,5 @@ export interface Upload {
 	id: string;
 	original_filename: string;
 	mimetype: string;
-	created_at: Date;
+	created_at: number; // Date
 }

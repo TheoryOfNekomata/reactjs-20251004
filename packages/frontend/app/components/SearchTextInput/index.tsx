@@ -6,6 +6,6 @@ export const SearchTextInput: FC<SearchTextInputProps> = ({
 	...etcProps
 }) => {
 	return (
-		<input className="h-12 w-full px-4 border rounded overflow-hidden" {...etcProps} type="search" />
+		<input className="h-12 w-full px-4 border rounded-full overflow-hidden" {...etcProps} type="search" />
 	);
 };

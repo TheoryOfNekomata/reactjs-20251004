@@ -15,10 +15,12 @@ declare module 'fastify' {
 interface CreateAppOptions {
   database?: Database;
   uploadsDir?: string;
+  corsAllowedOrigins?: string[];
+  maxUploadFileSize?: number;
 }
 
 export const createApp = (opts = {} as CreateAppOptions) => {
-  const { database, uploadsDir = '/uploads' } = opts;
+  const { database, uploadsDir = '/uploads', corsAllowedOrigins, maxUploadFileSize = 5 * 1024 * 1024 } = opts;
 
   const packageJson = readFileSync('package.json', { encoding: 'utf-8' });
   const packageJsonData = JSON.parse(packageJson);
@@ -39,18 +41,19 @@ export const createApp = (opts = {} as CreateAppOptions) => {
     mkdirSync(trueUploadsDir, { recursive: true });
   }
   app.decorate('uploadsDir', uploadsDir);
-
-  // app.register(fastifyCors, {
-    // origin: ['http://localhost:5173'],
-  // });
+  if (Array.isArray(corsAllowedOrigins)) {
+    app.register(fastifyCors, {
+      origin: corsAllowedOrigins,
+    });
+  }
 
   // Register multipart plugin
   app.register(fastifyMultipart, {
     limits: {
       fieldNameSize: 100, // Max field name size in bytes
-      fieldSize: 100, // Max field value size in bytes
+      fieldSize: 0, // Max field value size in bytes
       fields: 0, // Max number of non-file fields
-      fileSize: 5 * 1024 * 1024, // 5MB limit for file uploads
+      fileSize: maxUploadFileSize, // 5MB limit for file uploads
       files: 1, // Max number of file fields
     }
   });

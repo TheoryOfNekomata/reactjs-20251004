@@ -1,4 +1,4 @@
-// import { type Piano } from '@piano-man/backend';
+import {type Piano, type PianoImage} from '@piano-man/backend';
 
 interface QueryPianosParams {
 	q?: string;
@@ -18,13 +18,18 @@ export const queryPianos = async (params = {} as QueryPianosParams) => {
 		searchParams.append('p', params.p.toString());
 	}
 	const response = await fetch(`/api/pianos?${searchParams.toString()}`);
-	const data = await response.json();
-	return data;
-	// return data as Piano;
+	const pianoData = await response.json();
+	return {
+		data: pianoData,
+		count: Number(response.headers.get('X-Total-Count')),
+	} as {
+		data: (Piano & { image?: PianoImage })[];
+		count: number;
+	};
 };
 
 export const getPianoById = async (id: string) => {
 	const response = await fetch(`/api/pianos/${id}`);
 	const data = await response.json();
-	return data;
+	return data as Piano & { images: PianoImage[] };
 };
