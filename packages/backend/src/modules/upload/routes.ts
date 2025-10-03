@@ -44,7 +44,7 @@ export const addToApp = (fastify: FastifyInstance) => {
 		}>({
 			method: 'GET',
 			url: '/api/uploads/:uploadId',
-			handler: async (request, reply) => {
+			handler: (request, reply) => {
 				const upload = getUploadById(request.server.db)(request.params.uploadId);
 				if (!upload) {
 					reply.status(404).send();
@@ -61,7 +61,7 @@ export const addToApp = (fastify: FastifyInstance) => {
 		}>({
 			method: 'DELETE',
 			url: '/api/uploads/:uploadId',
-			handler: async (request, reply) => {
+			handler: (request, reply) => {
 				try {
 					const result = deleteUpload(request.server.db, trueBasePath)(request.params.uploadId);
 					if (!result) {
@@ -82,7 +82,7 @@ export const addToApp = (fastify: FastifyInstance) => {
 		}>({
 			method: 'GET',
 			url: '/api/uploads/:uploadId/binary',
-			handler: async (request, reply) => {
+			handler: (request, reply) => {
 				const upload = getUploadById(request.server.db)(request.params.uploadId);
 				if (!upload) {
 					reply.status(404).send();

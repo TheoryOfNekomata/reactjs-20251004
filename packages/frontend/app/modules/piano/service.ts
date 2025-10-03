@@ -1,4 +1,4 @@
-import {type Piano, type PianoImage} from '@piano-man/backend';
+import type { Piano, PianoImage } from '@piano-man/backend';
 
 interface QueryPianosParams {
 	q?: string;

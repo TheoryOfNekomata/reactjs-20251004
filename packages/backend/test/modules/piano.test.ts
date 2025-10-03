@@ -73,6 +73,7 @@ describe('Piano module', () => {
 			const newPiano = {
 				id: '123',
 				model: 'New Piano',
+				description: 'New Description',
 				created_at: new Date().toISOString()
 			};
 			mockCreateNewPiano.mockReturnValueOnce(() => newPiano);
@@ -92,6 +93,7 @@ describe('Piano module', () => {
 				},
 				payload: {
 					model: 'New Piano',
+					description: 'New Description',
 					images: [
 						{ upload_id: 'upload789' }
 					]
@@ -103,6 +105,7 @@ describe('Piano module', () => {
 			const data = response.json();
 			expect(data.id).toBe(newPiano.id);
 			expect(data.model).toBe(newPiano.model);
+			expect(data.description).toBe(newPiano.description);
 			expect(data.images).toHaveLength(1);
 			expect(data.images[0].piano_id).toBe(newPiano.id);
 		});
@@ -142,12 +145,15 @@ describe('Piano module', () => {
 	});
 
 	describe('update piano', () => {
-		it('successfully updates a piano', async () => {
+		it('successfully updates a piano model', async () => {
 			const updatedPiano = {
 				id: '123',
 				model: 'Updated Piano Model',
 				created_at: new Date().toISOString()
 			};
+			const mockGetPianoImages = pianoModule.service.getPianoImages as Mock;
+			mockGetPianoImages.mockReturnValueOnce(() => []);
+
 			const mockUpdatePianoModel = pianoModule.service.updatePianoModel as Mock;
 			mockUpdatePianoModel.mockReturnValueOnce(() => () => updatedPiano);
 
@@ -167,6 +173,66 @@ describe('Piano module', () => {
 			const data = response.json();
 			expect(data.id).toBe(updatedPiano.id);
 			expect(data.model).toBe(updatedPiano.model);
+
+			mockGetPianoImages.mockReset();
+		});
+
+		it('successfully updates a piano description', async () => {
+			const updatedPiano = {
+				id: '123',
+				description: 'Updated Piano Description',
+				created_at: new Date().toISOString()
+			};
+			const mockGetPianoImages = pianoModule.service.getPianoImages as Mock;
+			mockGetPianoImages.mockReturnValueOnce(() => []);
+			const mockUpdatePianoDescription = pianoModule.service.updatePianoDescription as Mock;
+			mockUpdatePianoDescription.mockReturnValueOnce(() => () => updatedPiano);
+
+			const response = await app.inject({
+				method: 'PATCH',
+				url: '/api/pianos/123',
+				headers: {
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+				},
+				payload: {
+					description: 'Updated Piano Description',
+				}
+			});
+
+			expect(response.statusCode).toBe(200);
+			const data = response.json();
+			expect(data.id).toBe(updatedPiano.id);
+			expect(data.description).toBe(updatedPiano.description);
+
+			mockGetPianoImages.mockReset();
+		});
+
+		it('returns 400 with unspecified payload', async () => {
+			const response = await app.inject({
+				method: 'PATCH',
+				url: '/api/pianos/123',
+				headers: {
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+				},
+			});
+
+			expect(response.statusCode).toBe(400);
+		});
+
+		it('returns 400 with empty payload', async () => {
+			const response = await app.inject({
+				method: 'PATCH',
+				url: '/api/pianos/123',
+				headers: {
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+				},
+				payload: {}
+			});
+
+			expect(response.statusCode).toBe(400);
 		});
 
 		it('returns 500 when update fails', async () => {

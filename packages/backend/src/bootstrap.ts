@@ -1,13 +1,12 @@
-import { config } from 'dotenv';
-import SqliteDatabase from 'better-sqlite3';
 import * as pianoModule from './modules/piano';
 import * as uploadModule from './modules/upload';
+import * as authModule from './modules/auth';
 import { createApp } from './app';
 import {runQuery} from './sql';
+import {createDb} from '../db';
 
-config({ quiet: true });
+const db = createDb();
 
-const db = new SqliteDatabase(process.env.DATABASE_FILENAME ?? ':memory:');
 const app = createApp({
 	database: db,
 	uploadsDir: process.env.UPLOADS_DIR,
@@ -17,6 +16,7 @@ const app = createApp({
 
 runQuery(db, 'src/schema.sql');
 
+authModule.routes.addToApp(app);
 pianoModule.routes.addToApp(app);
 uploadModule.routes.addToApp(app);
 

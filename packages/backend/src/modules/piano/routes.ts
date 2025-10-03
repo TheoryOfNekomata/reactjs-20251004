@@ -13,8 +13,8 @@ export const addToApp = (fastify: FastifyInstance) => {
 		}>({
 			method: 'GET',
 			url: '/api/pianos',
-			handler: async (request, reply) => {
-				const { c: itemsPerPage = 10, p: page = 1, q: query = '' } = request.query;
+			handler: (request, reply) => {
+				const { c: itemsPerPage = 12, p: page = 1, q: query = '' } = request.query;
 				const { data, count } = service.queryPianos(request.server.db)({
 					itemsPerPage: Number(itemsPerPage),
 					page: Number(page),
@@ -30,7 +30,7 @@ export const addToApp = (fastify: FastifyInstance) => {
 		}>({
 			method: 'GET',
 			url: '/api/pianos/:pianoId',
-			handler: async (request, reply) => {
+			handler: (request, reply) => {
 				const piano = service.getPianoById(request.server.db)(request.params.pianoId);
 				if (!piano) {
 					reply.status(404).send();
@@ -52,7 +52,7 @@ export const addToApp = (fastify: FastifyInstance) => {
 		}>({
 			method: 'POST',
 			url: '/api/pianos',
-			handler: async (request, reply) => {
+			handler: (request, reply) => {
 				const { images = [], ...pianoData } = request.body;
 				const newPiano = service.createNewPiano(request.server.db)(pianoData);
 				if (!newPiano) {
@@ -81,7 +81,7 @@ export const addToApp = (fastify: FastifyInstance) => {
 		}>({
 			method: 'DELETE',
 			url: '/api/pianos/:pianoId',
-			handler: async (request, reply) => {
+			handler: (request, reply) => {
 				try {
 					const result = service.deletePiano(request.server.db)(request.params.pianoId);
 					if (!result) {
@@ -98,17 +98,32 @@ export const addToApp = (fastify: FastifyInstance) => {
 			Params: {
 				pianoId: Piano['id'],
 			},
-			Body: service.UpdatePianoModelPiano
+			Body: service.UpdatePianoModelData | service.UpdatePianoDescriptionData
 		}>({
 			method: 'PATCH',
 			url: '/api/pianos/:pianoId',
-			handler: async (request, reply) => {
-				const updatedPiano = service.updatePianoModel(request.server.db)(request.params.pianoId)(request.body);
+			handler: (request, reply) => {
+				let updatedPiano = null;
+
+				if ('model' in request.body) {
+					updatedPiano = service.updatePianoModel(request.server.db)(request.params.pianoId)(request.body);
+					console.log('model', updatedPiano);
+				}
+				if ('description' in request.body) {
+					updatedPiano = service.updatePianoDescription(request.server.db)(request.params.pianoId)(request.body);
+					console.log('description', updatedPiano);
+				}
+
+				if (updatedPiano === null) {
+					reply.status(400).send();
+					return;
+				}
 
 				if (!updatedPiano) {
 					reply.status(500).send();
 					return;
 				}
+
 				reply.send(updatedPiano);
 			},
 		})
@@ -122,7 +137,7 @@ export const addToApp = (fastify: FastifyInstance) => {
 		}>({
 			method: 'POST',
 			url: '/api/pianos/:pianoId/images',
-			handler: async (request, reply) => {
+			handler: (request, reply) => {
 				const pianoImage = service.createPianoImage(request.server.db)(request.params.pianoId, request.body.upload_id);
 				if (!pianoImage) {
 					reply.status(500).send();
@@ -140,7 +155,7 @@ export const addToApp = (fastify: FastifyInstance) => {
 		}>({
 			method: 'DELETE',
 			url: '/api/pianos/:pianoId/images/:imageId',
-			handler: async (request, reply) => {
+			handler: (request, reply) => {
 				try {
 					const result = service.deletePianoImage(request.server.db)(request.params.imageId);
 					if (!result) {

@@ -1,1 +1,1 @@
-INSERT INTO pianos (id, model) VALUES (?, ?);
+INSERT INTO pianos (id, model, description) VALUES (?, ?, ?);

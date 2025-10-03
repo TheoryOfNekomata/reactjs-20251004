@@ -1,19 +1,36 @@
-import {Link, useParams} from 'react-router';
+import {Link, useNavigate, useParams} from 'react-router';
 import {useQuery} from '@tanstack/react-query';
-import {getPianoById} from '~/modules/piano/service';
+import {hooks as authHooks} from '~/modules/auth';
+import {service as pianoService} from '~/modules/piano';
+import {hooks as searchHooks} from '~/modules/search';
 import {Header} from '~/components/Header';
-import {useSearch} from '~/modules/search/hooks';
+import {useEffect} from 'react';
+import ReactMarkdown from 'react-markdown';
 
 export default function PianoPage() {
-	const {searchParams, processSearch} = useSearch();
+	const { session } = authHooks.useSession();
+	const navigate = useNavigate();
+	const {searchParams, processSearch} = searchHooks.useSearch();
 	const { id: idRaw } = useParams<{ id: string }>();
 	const id = idRaw as string;
 	const { data: pianoData, isLoading: isLoadingPianoData } = useQuery({
 		queryKey: ['getPianoById', id],
-		queryFn: () => getPianoById(id),
+		queryFn: () => pianoService.getPianoById(id),
 	});
 	const [firstImage] = pianoData ? pianoData.images : [];
 	const currentImage = searchParams.get('image_id');
+
+	useEffect(() => {
+		if (session === null) {
+			navigate('/');
+			return;
+		}
+	}, [session]);
+
+	if (!session) {
+		return null;
+	}
+
 	return (
 		<>
 			<Header defaultSearchQuery={searchParams.get('q') ?? undefined} processSearch={processSearch} />
@@ -34,6 +51,11 @@ export default function PianoPage() {
 							<img src={`/api/uploads/${firstImage.image_upload_id}/binary`} alt={`${pianoData.model} Image #1`} className="h-96 w-full object-cover object-center" />
 						</header>
 						<div className="max-w-5xl mx-auto px-4">
+							<div className="my-8">
+								<ReactMarkdown>
+									{pianoData.description}
+								</ReactMarkdown>
+							</div>
 							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 my-8">
 								{pianoData.images.map((d, i) => (
 									<article

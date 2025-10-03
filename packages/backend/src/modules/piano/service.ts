@@ -13,8 +13,8 @@ export interface CreatePiano extends Omit<Piano, 'id' | 'created_at'> {}
 
 export const createNewPiano = (db: Database) => (pianoData: CreatePiano): Piano | undefined => {
 	const id = randomUUID();
-	const createStmt = prepareQuery<[Piano['id'], Piano['model']]>(db, 'src/modules/piano/queries/create-new-piano.sql');
-	createStmt.run(id, pianoData.model);
+	const createStmt = prepareQuery<[Piano['id'], Piano['model'], Piano['description']]>(db, 'src/modules/piano/queries/create-new-piano.sql');
+	createStmt.run(id, pianoData.model, pianoData.description ?? '');
 	return getPianoById(db)(id);
 };
 
@@ -31,14 +31,23 @@ export const deletePiano = (db: Database) => (id: Piano['id']) => {
 	return true;
 };
 
-export interface UpdatePianoModelPiano extends Omit<Piano, 'id' | 'created_at'> {}
+export interface UpdatePianoModelData extends Pick<Piano, 'model'> {}
 
-export const updatePianoModel = (db: Database) => (id: Piano['id']) => (pianoData: UpdatePianoModelPiano) => {
+export const updatePianoModel = (db: Database) => (id: Piano['id']) => (pianoData: UpdatePianoModelData) => {
 	const updateStmt = prepareQuery<[Piano['model'], Piano['id']]>(db, 'src/modules/piano/queries/update-piano-model.sql');
 	updateStmt.run(pianoData.model, id);
 
 	return getPianoById(db)(id);
 };
+
+export interface UpdatePianoDescriptionData extends Pick<Piano, 'description'> {}
+
+export const updatePianoDescription = (db: Database) => (id: Piano['id']) => (pianoData: UpdatePianoDescriptionData) => {
+	const updateStmt = prepareQuery<[Piano['description'], Piano['id']]>(db, 'src/modules/piano/queries/update-piano-description.sql');
+	updateStmt.run(pianoData.description, id);
+
+	return getPianoById(db)(id);
+}
 
 export interface PianoQuery {
 	query?: string;
