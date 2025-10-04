@@ -27,6 +27,7 @@ export default function IndexPage() {
 			c: Number(searchParams.get('c')) ?? undefined,
 			p: Number(searchParams.get('p')) ?? undefined,
 		}),
+		staleTime: 10000,
 	});
 
 	const paginate: FormEventHandler<HTMLElementTagNameMap['form']> = (e) => {
