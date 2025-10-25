@@ -33,3 +33,11 @@ export const getPianoById = async (id: string) => {
 	const data = await response.json();
 	return data as Piano & { images: PianoImage[] };
 };
+
+export const formatPianoCreatedAt = (timestamp: number) => {
+  return new Date(timestamp * 1000).toLocaleString();
+};
+
+export const formatPianoCreatedAtIso = (timestamp: number) => {
+  return new Date(timestamp * 1000).toISOString();
+}

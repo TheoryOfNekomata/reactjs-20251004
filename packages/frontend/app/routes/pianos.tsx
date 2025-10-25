@@ -15,9 +15,9 @@ export function meta({}: Route.MetaArgs) {
 	];
 }
 
-export default function IndexPage() {
-	const { session } = authHooks.useSession();
-	const navigate = useNavigate();
+export default function PianosPage() {
+  const { session } = authHooks.useSession();
+  const navigate = useNavigate();
 	const {searchParams, processSearch} = searchHooks.useSearch();
 	const {goToNextPage, goToPreviousPage} = searchHooks.usePagination();
 	const {data: pianoData, isLoading: isLoadingPianoData} = useQuery({
@@ -48,21 +48,41 @@ export default function IndexPage() {
 		}
 	};
 
-	useEffect(() => {
-		if (session === null) {
-			navigate('/');
-			return;
-		}
-	}, [session]);
-
-	if (!session) {
-		return null;
-	}
+  const doAction: FormEventHandler<HTMLElementTagNameMap['form']> = (e) => {
+    e.preventDefault();
+    const { submitter } = e.nativeEvent as unknown as { submitter: HTMLElementTagNameMap['button'] };
+    if (submitter.name !== 'action') {
+      return;
+    }
+    switch (submitter.value) {
+      case 'new':
+        navigate('/create/pianos');
+        return;
+      default:
+        break;
+    }
+  };
 
 	return (
 		<>
-			<Header defaultSearchQuery={searchParams.get('q') ?? undefined} processSearch={processSearch} />
+			<Header
+        key={searchParams.get('q') ?? undefined}
+        hasSearch
+        defaultSearchQuery={searchParams.get('q') ?? undefined}
+        processSearch={processSearch}
+      />
 			<main className="max-w-2xl lg:max-w-5xl mx-auto px-4">
+        {session && (
+          <form onSubmit={doAction}>
+            <div className="my-8 flex justify-end">
+              <div>
+                <Button type="submit" name="action" value="new">
+                  Add New Piano
+                </Button>
+              </div>
+            </div>
+          </form>
+        )}
 				{!isLoadingPianoData && (
 					<>
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 my-8">
@@ -77,7 +97,7 @@ export default function IndexPage() {
 									>
 										<div className="w-full h-32">
 											<img
-												className="w-full h-full block object-center object-cover opacity-25 group-hover:opacity-100 transition-opacity"
+												className="w-full h-full block object-center object-cover opacity-25 group-hover:opacity-100 group-focus:opacity-100 transition-opacity"
 												src={d.image ? `/api/uploads/${d.image.image_upload_id}/binary` : 'http://lorempixel.com/200'}
 												alt={d.model}
 											/>

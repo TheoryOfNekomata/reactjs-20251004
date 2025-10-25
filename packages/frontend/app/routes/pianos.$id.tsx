@@ -1,16 +1,17 @@
-import {Link, useNavigate, useParams} from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import {useQuery} from '@tanstack/react-query';
 import {hooks as authHooks} from '~/modules/auth';
 import {service as pianoService} from '~/modules/piano';
 import {hooks as searchHooks} from '~/modules/search';
 import {Header} from '~/components/Header';
-import {useEffect} from 'react';
 import ReactMarkdown from 'react-markdown';
+import { Button } from '~/components/Button';
+import type { FormEventHandler } from 'react';
 
-export default function PianoPage() {
-	const { session } = authHooks.useSession();
-	const navigate = useNavigate();
-	const {searchParams, processSearch} = searchHooks.useSearch();
+export default function PianosIdPage() {
+  const { session } = authHooks.useSession();
+  const navigate = useNavigate();
+	const {searchParams} = searchHooks.useSearch();
 	const { id: idRaw } = useParams<{ id: string }>();
 	const id = idRaw as string;
 	const { data: pianoData, isLoading: isLoadingPianoData } = useQuery({
@@ -20,35 +21,73 @@ export default function PianoPage() {
 	const [firstImage] = pianoData ? pianoData.images : [];
 	const currentImage = searchParams.get('image_id');
 
-	useEffect(() => {
-		if (session === null) {
-			navigate('/');
-			return;
-		}
-	}, [session]);
+  const doAction: FormEventHandler<HTMLElementTagNameMap['form']> = async (e) => {
+    e.preventDefault();
+    const { submitter } = e.nativeEvent as unknown as { submitter: HTMLElementTagNameMap['button'] };
+    if (submitter.name !== 'action') {
+      return;
+    }
 
-	if (!session) {
-		return null;
-	}
+    switch (submitter.value) {
+      case 'edit':
+        await navigate(`/edit/pianos/${id}`);
+        return;
+      case 'delete':
+        {
+          const response = await fetch(`/api/pianos/${id}`, {
+            method: 'DELETE',
+          })
+
+          if (response.ok) {
+            await navigate('/')
+          }
+          return;
+        }
+      default:
+        break;
+    }
+  };
 
 	return (
 		<>
-			<Header defaultSearchQuery={searchParams.get('q') ?? undefined} processSearch={processSearch} />
+			<Header />
 			<main>
 				{!isLoadingPianoData && pianoData && (
 					<article>
-						<header className="relative min-h-28">
+						<header className={`relative min-h-28 ${session ? 'pt-20' : ''}`.trim()}>
 							<div className="absolute bottom-0 left-0 w-full bg-black/75 text-white">
 								<div className="max-w-5xl mx-auto px-4 flex flex-col justify-center gap-2 h-28">
 									<h1 className="text-2xl flex items-end lg:text-5xl font-bold line-clamp-2 h-[3em]">
 										{pianoData.model}
 									</h1>
-									<time dateTime={new Date(pianoData.created_at * 1000).toISOString()} className="font-bold">
-										Added {new Date(pianoData.created_at * 1000).toLocaleString()}
+									<time dateTime={pianoService.formatPianoCreatedAtIso(pianoData.created_at)} className="font-bold">
+										Added {pianoService.formatPianoCreatedAt(pianoData.created_at)}
 									</time>
 								</div>
 							</div>
 							<img src={`/api/uploads/${firstImage.image_upload_id}/binary`} alt={`${pianoData.model} Image #1`} className="h-96 w-full object-cover object-center" />
+              {session && (
+                <div className="absolute top-0 right-0 w-full bg-black/25 text-white">
+                  <div className="max-w-5xl mx-auto px-4 flex flex-col justify-center gap-2 h-20">
+                    <div className="text-right">
+                      <form className="inline-block align-top" onSubmit={doAction}>
+                        <div className="flex flex-col md:flex-row gap-4">
+                          <div>
+                            <Button type="submit" name="action" value="edit">
+                              Edit
+                            </Button>
+                          </div>
+                          <div>
+                            <Button type="submit" name="action" value="delete">
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              )}
 						</header>
 						<div className="max-w-5xl mx-auto px-4">
 							<div className="my-8">

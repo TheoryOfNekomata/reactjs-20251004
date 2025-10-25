@@ -1,6 +1,6 @@
 import {Database} from 'better-sqlite3';
 import {createUser, getUserByUsername, invalidateUserSessions, updateUserPassword} from '../src/modules/auth/service';
-import {createDb} from '../db';
+import {createDb} from '../src/db';
 
 const main = (db: Database, username?: string, password?: string) => {
 	if (!username) {

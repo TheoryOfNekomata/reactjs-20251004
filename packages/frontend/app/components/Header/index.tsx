@@ -7,12 +7,14 @@ export interface HeaderProps {
 	processSearch?: (form: HTMLElementTagNameMap['form']) => (void | Promise<void>);
 	defaultSearchQuery?: string;
 	searchDebounceTimer?: number;
+  hasSearch?: boolean;
 }
 
 export const Header: FC<HeaderProps> = ({
 	processSearch,
 	defaultSearchQuery = '',
 	searchDebounceTimer = 500,
+  hasSearch = false,
 }) => {
 	const navigate = useNavigate();
 	const { username, destroySession } = useSession();
@@ -46,7 +48,7 @@ export const Header: FC<HeaderProps> = ({
 
 	return (
 		<header className="z-10 top-0 left-0 w-full h-16 sticky bg-black border-b border-b-current/25 text-white">
-			<div className="max-w-xl mx-auto px-4 h-full flex gap-4 justify-between items-center">
+			<div className="max-w-5xl mx-auto px-4 h-full flex gap-4 justify-between items-center">
 				<div>
 					<Link to="/">
 						<span className="font-extrabold text-lg leading-0 md:text-2xl uppercase">
@@ -54,18 +56,22 @@ export const Header: FC<HeaderProps> = ({
 						</span>
 					</Link>
 				</div>
-				<div>
-					{username && (
-						<form onSubmit={handleSubmit}>
-							<SearchTextInput
-								placeholder="Enter search query here&hellip;"
-								name="q"
-								defaultValue={defaultSearchQuery}
-								onChange={handleChange}
-							/>
-						</form>
-					)}
-				</div>
+        {
+          hasSearch
+          && (
+            <div>
+              <form onSubmit={handleSubmit}>
+                <SearchTextInput
+                  placeholder="Enter search query here&hellip;"
+                  name="q"
+                  defaultValue={defaultSearchQuery}
+                  onChange={handleChange}
+                  autoFocus
+                />
+              </form>
+            </div>
+          )
+        }
 				<div>
 					{username === null && (
 						<Link to="/log-in">

@@ -3,7 +3,7 @@ import * as uploadModule from './modules/upload';
 import * as authModule from './modules/auth';
 import { createApp } from './app';
 import {runQuery} from './sql';
-import {createDb} from '../db';
+import {createDb} from './db';
 
 const db = createDb();
 

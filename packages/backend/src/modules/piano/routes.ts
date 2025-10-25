@@ -107,11 +107,10 @@ export const addToApp = (fastify: FastifyInstance) => {
 
 				if ('model' in request.body) {
 					updatedPiano = service.updatePianoModel(request.server.db)(request.params.pianoId)(request.body);
-					console.log('model', updatedPiano);
 				}
+
 				if ('description' in request.body) {
 					updatedPiano = service.updatePianoDescription(request.server.db)(request.params.pianoId)(request.body);
-					console.log('description', updatedPiano);
 				}
 
 				if (updatedPiano === null) {

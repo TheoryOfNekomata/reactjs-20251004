@@ -60,7 +60,7 @@ export default function LogInPage() {
 					<form onSubmit={handleLogIn}>
 						<div className="flex gap-4 flex-col">
 							<div>
-								<TextInput name="username" placeholder="Username" />
+								<TextInput name="username" placeholder="Username" autoFocus />
 							</div>
 							<div>
 								<MaskedTextInput name="password" placeholder="Password" />
