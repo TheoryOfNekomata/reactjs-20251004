@@ -1,39 +1,45 @@
-import type { Route } from './+types/edit.pianos.$id';
 import { Header } from '~/components/Header';
 import { TextInput } from '~/components/TextInput';
 import { MultilineTextInput } from '~/components/MultilineTextInput';
 import { type FormEventHandler } from 'react';
 import { Button } from '~/components/Button';
-import { useNavigate } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
+import { useNavigate, useParams } from 'react-router';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {service as pianoService} from '~/modules/piano';
+import type { Piano } from '@piano-man/backend';
 
-
-export default function EditPianosIdPage({ params }: Route.ComponentProps) {
+export default function EditPianosIdPage() {
+  const { id: idRaw } = useParams<{ id: string }>();
+  const id = idRaw as string;
+  const queryClient = useQueryClient();
   const { data: pianoData, isLoading: isLoadingPianoData } = useQuery({
-    queryKey: ['getPianoById', params.id],
-    queryFn: () => pianoService.getPianoById(params.id),
+    queryKey: ['getPianoById', id],
+    queryFn: () => pianoService.getPianoById(id),
   });
   const navigate = useNavigate();
+  const { mutate: doUpdatePiano } = useMutation<Piano, Error, Partial<Piano>>({
+    mutationKey: ['updatePiano', id],
+    mutationFn: (variables) => pianoService.updatePiano(id, variables),
+    onSuccess: async (data) => {
+      await Promise.allSettled([
+        queryClient.refetchQueries({
+          queryKey: ['queryPianos']
+        }),
+        queryClient.refetchQueries({
+          queryKey: ['getPianoById', data.id],
+        }),
+      ]);
+      await navigate(`/pianos/${data.id}`);
+    }
+  })
 
   const updatePiano: FormEventHandler<HTMLElementTagNameMap['form']> = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const response = await fetch(`/api/pianos/${params.id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({
-        model: formData.get('model'),
-        description: formData.get('description')
-      }),
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
+    doUpdatePiano({
+      model: formData.get('model') as string,
+      description: formData.get('description') as string
     })
-    const data = await response.json();
-    if (response.ok) {
-      navigate(`/pianos/${data.id}`);
-    }
   };
 
   return (

@@ -3,13 +3,26 @@ import { TextInput } from '~/components/TextInput';
 import { MultilineTextInput } from '~/components/MultilineTextInput';
 import { UploadArea, type UploadAreaProps } from '~/components/UploadArea';
 import { type FormEventHandler, useState } from 'react';
-import type { Upload } from '@piano-man/backend';
+import type { Piano, PianoImage, Upload } from '@piano-man/backend';
 import { Button } from '~/components/Button';
 import { useNavigate } from 'react-router';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { service as pianoService } from '~/modules/piano';
 
 export default function CreatePianosPage() {
   const [uploadedFiles, setUploadedFiles] = useState([] as Upload[]);
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { mutate: doCreatePiano } = useMutation<Piano, Error, Partial<Piano> & { images: Pick<PianoImage, 'image_upload_id'>[] }>({
+    mutationKey: ['createPiano'],
+    mutationFn: (variables) => pianoService.createPiano(variables),
+    onSuccess: async data => {
+      await queryClient.invalidateQueries({
+        queryKey: ['queryPianos']
+      })
+      await navigate(`/pianos/${data.id}`);
+    },
+  })
 
   const uploadFiles: UploadAreaProps['onFileSelect'] = async (files) => {
     await Promise.allSettled(files.map(async file => {
@@ -56,26 +69,15 @@ export default function CreatePianosPage() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const uploadIds = formData.getAll('images.upload_id');
-    const response = await fetch('/api/pianos', {
-      method: 'POST',
-      body: JSON.stringify({
-        model: formData.get('model'),
-        description: formData.get('description'),
-        images: uploadIds.map((u) => {
-          return {
-            upload_id: u,
-          };
-        })
-      }),
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
+    doCreatePiano({
+      model: formData.get('model') as string,
+      description: formData.get('description') as string,
+      images: uploadIds.map((u) => {
+        return {
+          image_upload_id: u as string,
+        };
+      })
     })
-    const data = await response.json();
-    if (response.ok) {
-      navigate(`/pianos/${data.id}`);
-    }
   };
 
   return (
@@ -110,7 +112,7 @@ export default function CreatePianosPage() {
                   {uploadedFiles.length > 0 && (
                     <div className="flex flex-col gap-4">
                       {uploadedFiles.map((uploadFile, index) => (
-                        <div>
+                        <div key={uploadFile.id}>
                           <input type="hidden" name="images.upload_id" value={uploadFile.id} />
                           <img src={`/api/uploads/${uploadFile.id}/binary`} alt={`Uploaded File #${index + 1}`} />
                           <button type="submit" name="delete" value={uploadFile.id} form="uploadedFiles">

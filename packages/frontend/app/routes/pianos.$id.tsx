@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from 'react-router';
-import {useQuery} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {hooks as authHooks} from '~/modules/auth';
 import {service as pianoService} from '~/modules/piano';
 import {hooks as searchHooks} from '~/modules/search';
@@ -14,12 +14,28 @@ export default function PianosIdPage() {
 	const {searchParams} = searchHooks.useSearch();
 	const { id: idRaw } = useParams<{ id: string }>();
 	const id = idRaw as string;
+  const queryClient = useQueryClient();
 	const { data: pianoData, isLoading: isLoadingPianoData } = useQuery({
 		queryKey: ['getPianoById', id],
 		queryFn: () => pianoService.getPianoById(id),
 	});
 	const [firstImage] = pianoData ? pianoData.images : [];
 	const currentImage = searchParams.get('image_id');
+  const { mutateAsync: doDeletePiano } = useMutation({
+    mutationKey: ['deletePiano', id],
+    mutationFn: async () => pianoService.deletePiano(id),
+    onSuccess: async () => {
+      await navigate('/')
+      await Promise.allSettled([
+        queryClient.invalidateQueries({
+          queryKey: ['queryPianos']
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['getPianoById', id],
+        }),
+      ])
+    },
+  })
 
   const doAction: FormEventHandler<HTMLElementTagNameMap['form']> = async (e) => {
     e.preventDefault();
@@ -33,16 +49,8 @@ export default function PianosIdPage() {
         await navigate(`/edit/pianos/${id}`);
         return;
       case 'delete':
-        {
-          const response = await fetch(`/api/pianos/${id}`, {
-            method: 'DELETE',
-          })
-
-          if (response.ok) {
-            await navigate('/')
-          }
-          return;
-        }
+        await doDeletePiano()
+        return;
       default:
         break;
     }
@@ -71,13 +79,13 @@ export default function PianosIdPage() {
                   <div className="max-w-5xl mx-auto px-4 flex flex-col justify-center gap-2 h-20">
                     <div className="text-right">
                       <form className="inline-block align-top" onSubmit={doAction}>
-                        <div className="flex flex-col md:flex-row gap-4">
-                          <div>
+                        <div className="flex gap-4">
+                          <div className="w-28">
                             <Button type="submit" name="action" value="edit">
                               Edit
                             </Button>
                           </div>
-                          <div>
+                          <div className="w-28">
                             <Button type="submit" name="action" value="delete">
                               Delete
                             </Button>
