@@ -9,6 +9,6 @@ export const MultilineTextInput: FC<MultilineTextInputProps> = ({
 	...etcProps
 }) => {
 	return (
-		<textarea {...etcProps} style={{ ...style, height: 48 + ((rows - 1) * 24) }} className={`min-h-12 w-full px-4 py-3 border rounded overflow-hidden resize-y ${className}`.trim()} />
+		<textarea {...etcProps} style={{ ...style, height: 48 + ((rows - 1) * 24) }} className={`min-h-12 w-full px-4 py-3 border rounded overflow-hidden resize-y align-top ${className}`.trim()} />
 	);
 };

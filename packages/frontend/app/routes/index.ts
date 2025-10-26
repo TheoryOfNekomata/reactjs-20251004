@@ -1,6 +1,10 @@
 import {hooks as authHooks} from '~/modules/auth';
 import {useEffect} from 'react';
-import {useNavigate} from 'react-router';
+import { redirect, useNavigate } from 'react-router';
+
+export const loader = () => {
+  return redirect('/pianos');
+};
 
 export default function IndexPage() {
 	const navigate = useNavigate();

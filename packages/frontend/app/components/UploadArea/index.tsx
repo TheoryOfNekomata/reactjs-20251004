@@ -24,12 +24,12 @@ export const UploadArea: FC<UploadAreaProps> = ({
   };
 
   return (
-    <label className={`inline-block rounded overflow-hidden w-full min-h-32 min-w-32 relative ${className}`.trim()} style={style}>
+    <label className={`cursor-pointer has-disabled:cursor-not-allowed has-disabled:opacity-50 inline-block align-top rounded border overflow-hidden w-full min-h-32 min-w-32 relative ${className}`.trim()} style={style}>
       <input {...etcProps} onChange={(e) => {
         handleChange(e);
         onChange?.(e);
       }} type="file" className="sr-only" />
-      <span className="flex absolute top-0 left-0 w-full h-full items-center justify-center">
+      <span className="flex absolute top-0 left-0 w-full h-full items-center justify-center p-4 text-center">
         {placeholder}
       </span>
     </label>
